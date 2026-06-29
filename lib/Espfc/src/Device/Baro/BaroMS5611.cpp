@@ -12,8 +12,9 @@
 #define MS5611_CMD_ADC_READ   0x00
 #define MS5611_CMD_PROM_BASE  0xA0  // PROM word i at (0xA0 + i*2)
 
-// OSR=4096 needs 9.04ms; use 10ms margin
-#define MS5611_CONVERSION_TIME_US 10000
+// Some MS5611 clones are slower than datasheet typical timings on ESP32 I2C.
+// 12ms matches the known-good standalone sketch behavior.
+#define MS5611_CONVERSION_TIME_US 12000
 
 namespace Espfc::Device::Baro {
 
@@ -59,6 +60,7 @@ BaroDeviceType BaroMS5611::getType() const
 float BaroMS5611::readTemperature()
 {
   uint32_t D2 = readADC();
+  if (D2 == 0) return _t_fine * 0.01f;
 
   _dT = (int32_t)D2 - ((int32_t)_c[4] << 8);
   int32_t TEMP = 2000 + (int32_t)(((int64_t)_dT * _c[5]) >> 23);
@@ -76,6 +78,7 @@ float BaroMS5611::readTemperature()
 float BaroMS5611::readPressure()
 {
   uint32_t D1 = readADC();
+  if (D1 == 0) return _pressure;
 
   int32_t TEMP = _t_fine;
 
@@ -100,7 +103,8 @@ float BaroMS5611::readPressure()
   int64_t P = ((int64_t)D1 * SENS >> 21) - OFF;
   P >>= 15;
 
-  return (float)(int32_t)P;
+  _pressure = (float)(int32_t)P;
+  return _pressure;
 }
 
 void BaroMS5611::setMode(BaroDeviceMode mode)
@@ -136,7 +140,7 @@ uint32_t BaroMS5611::readADC()
 {
   SuppressI2CError guard(_bus);
   uint8_t buf[3] = {0, 0, 0};
-  _bus->read(_addr, MS5611_CMD_ADC_READ, 3, buf);
+  if (_bus->read(_addr, MS5611_CMD_ADC_READ, 3, buf) != 3) return 0;
   return ((uint32_t)buf[0] << 16) | ((uint32_t)buf[1] << 8) | buf[2];
 }
 
@@ -149,9 +153,20 @@ bool BaroMS5611::readPROM()
   for (int i = 0; i < 8; i++)
   {
     uint8_t buf[2] = {0, 0};
-    _bus->read(_addr, MS5611_CMD_PROM_BASE + i * 2, 2, buf);
+    if (_bus->read(_addr, MS5611_CMD_PROM_BASE + i * 2, 2, buf) != 2) return false;
     prom[i] = ((uint16_t)buf[0] << 8) | buf[1];
   }
+
+  bool anyCoef = false;
+  for (int i = 1; i <= 6; i++)
+  {
+    if (prom[i] != 0 && prom[i] != 0xFFFF)
+    {
+      anyCoef = true;
+      break;
+    }
+  }
+  if (!anyCoef) return false;
 
   uint8_t crcExpected = prom[7] & 0x000F;
   if (crc4(prom) != crcExpected) return false;

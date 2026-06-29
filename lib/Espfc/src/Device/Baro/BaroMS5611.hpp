@@ -28,8 +28,9 @@ protected:
   uint8_t  crc4(uint16_t prom[8]);
 
   uint16_t _c[6];    // C1..C6 calibration coefficients from PROM (_c[0]=C1 .. _c[5]=C6)
-  int32_t  _dT;      // difference between actual and reference temperature
-  int32_t  _t_fine;  // compensated temperature * 100, stored by readTemperature()
+  int32_t  _dT = 0;      // difference between actual and reference temperature
+  int32_t  _t_fine = 2000;  // compensated temperature * 100, stored by readTemperature()
+  float    _pressure = 101325.f;
 };
 
 } // namespace Espfc::Device::Baro

@@ -27,6 +27,7 @@ private:
   void readTemperature();
   void readPressure();
   void updateAltitude();
+  void updateGroundReference(float pressure, float vario, bool armed);
 
   Model& _model;
   Device::BaroDevice* _baro;
@@ -39,6 +40,12 @@ private:
   Utils::Filter _varioFilter;
   uint32_t _wait;
   int32_t _counter;
+  float _groundPressure;
+  float _calPressureMin;
+  float _calPressureMax;
+  float _calPressureSum;
+  int32_t _calPressureCount;
+  bool _groundCalibrated;
 };
 
 } // namespace Espfc::Sensor
