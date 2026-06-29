@@ -96,6 +96,7 @@ private:
   void printGpsStatus(Stream& s, bool full) const;
   void printVersion(Stream& s) const;
   void printStats(Stream& s) const;
+  void printBaroStatus(Stream& s) const;
 
   Model& _model;
   const Param * _params;

@@ -139,6 +139,7 @@
  lib/Espfc/src/Device/BusDevice.hpp lib/Espfc/src/Utils/Bits.hpp \
  lib/Espfc/src/Device/Baro/BaroBMP280.hpp \
  lib/Espfc/src/Device/Baro/BaroSPL06.hpp \
+ lib/Espfc/src/Device/Baro/BaroMS5611.hpp \
  lib/Espfc/src/Device/GyroBMI160.h lib/Espfc/src/Device/GyroDevice.h \
  lib/AHRS/src/helper_3dmath.h lib/Espfc/src/Utils/MemoryHelper.h \
  lib/Espfc/src/Device/GyroICM20602.h lib/Espfc/src/Device/GyroMPU6050.h \

@@ -1,6 +1,7 @@
 #include "Device/Baro/BaroBMP085.hpp"
 #include "Device/Baro/BaroBMP280.hpp"
 #include "Device/Baro/BaroSPL06.hpp"
+#include "Device/Baro/BaroMS5611.hpp"
 #include "Device/BaroDevice.hpp"
 #include "Device/GyroBMI160.h"
 #include "Device/GyroDevice.h"
@@ -51,6 +52,7 @@ static Espfc::Device::Mag::MagAK8963 ak8963;
 static Espfc::Device::Baro::BaroBMP085 bmp085;
 static Espfc::Device::Baro::BaroBMP280 bmp280;
 static Espfc::Device::Baro::BaroSPL06 spl06;
+static Espfc::Device::Baro::BaroMS5611 ms5611;
 } // namespace
 
 namespace Espfc {
@@ -60,9 +62,26 @@ Hardware::Hardware(Model& model): _model(model) {}
 int Hardware::begin()
 {
   initBus();
+
+  // Suppress I2C error callbacks during detection: every probe of a
+  // non-existent address causes a NAK which fires onError. These are
+  // expected during auto-detection and must not be counted as real errors
+  // or allowed to corrupt the error counter that other subsystems watch.
+#if defined(ESPFC_I2C_0)
+  auto savedOnError = i2cBus.onError;
+  i2cBus.onError = nullptr;
+#endif
+
   detectGyro();
   detectMag();
   detectBaro();
+
+#if defined(ESPFC_I2C_0)
+  i2cBus.onError = savedOnError;
+  _model.state.i2cErrorCount = 0; // clear spurious errors from detection
+  _model.state.i2cErrorDelta = 0;
+#endif
+
   return 1;
 }
 
@@ -177,6 +196,7 @@ void Hardware::detectBaro()
     if (!detectedBaro && detectDevice(bmp280, spiBus, _model.config.pin[PIN_SPI_CS1])) detectedBaro = &bmp280;
     if (!detectedBaro && detectDevice(bmp085, spiBus, _model.config.pin[PIN_SPI_CS1])) detectedBaro = &bmp085;
     if (!detectedBaro && detectDevice(spl06, spiBus, _model.config.pin[PIN_SPI_CS1])) detectedBaro = &spl06;
+    if (!detectedBaro && detectDevice(ms5611, spiBus, _model.config.pin[PIN_SPI_CS1])) detectedBaro = &ms5611; 
   }
 #endif
 #if defined(ESPFC_I2C_0)
@@ -185,6 +205,7 @@ void Hardware::detectBaro()
     if (!detectedBaro && detectDevice(bmp280, i2cBus)) detectedBaro = &bmp280;
     if (!detectedBaro && detectDevice(bmp085, i2cBus)) detectedBaro = &bmp085;
     if (!detectedBaro && detectDevice(spl06, i2cBus)) detectedBaro = &spl06;
+    if (!detectedBaro && detectDevice(ms5611, i2cBus)) detectedBaro = &ms5611;
   }
 #endif
   if (gyroSlaveBus.getBus())
@@ -192,6 +213,7 @@ void Hardware::detectBaro()
     if (!detectedBaro && detectDevice(bmp280, gyroSlaveBus)) detectedBaro = &bmp280;
     if (!detectedBaro && detectDevice(bmp085, gyroSlaveBus)) detectedBaro = &bmp085;
     if (!detectedBaro && detectDevice(spl06, gyroSlaveBus)) detectedBaro = &spl06;
+    if (!detectedBaro && detectDevice(ms5611, gyroSlaveBus)) detectedBaro = &ms5611;
   }
 
   _model.state.baro.dev = detectedBaro;

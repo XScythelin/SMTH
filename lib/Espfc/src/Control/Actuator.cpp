@@ -90,10 +90,9 @@ void Actuator::updateScaler()
 
 void Actuator::updateArmingDisabled()
 {
-  int errors = _model.state.i2cErrorDelta;
   _model.state.i2cErrorDelta = 0;
 
-  _model.setArmingDisabled(ARMING_DISABLED_NO_GYRO,        !_model.state.gyro.present || errors);
+  _model.setArmingDisabled(ARMING_DISABLED_NO_GYRO,        !_model.state.gyro.present);
   _model.setArmingDisabled(ARMING_DISABLED_FAILSAFE,        _model.state.failsafe.phase != FC_FAILSAFE_IDLE);
   _model.setArmingDisabled(ARMING_DISABLED_RX_FAILSAFE,     _model.state.input.rxLoss || _model.state.input.rxFailSafe);
   _model.setArmingDisabled(ARMING_DISABLED_THROTTLE,       !_model.isThrottleLow());

@@ -891,6 +891,7 @@ void Cli::execute(CliCmd& cmd, Stream& s)
       PSTR(" help"), PSTR(" dump"), PSTR(" get param"), PSTR(" set param value ..."), PSTR(" cal [gyro]"),
       PSTR(" defaults"), PSTR(" save"), PSTR(" reboot"), PSTR(" scaler"), PSTR(" mixer"),
       PSTR(" stats"), PSTR(" status"), PSTR(" devinfo"), PSTR(" version"), PSTR(" logs"), PSTR(" gps [set_home|clear_home]"),
+      PSTR(" baro"),
       //PSTR(" load"), PSTR(" eeprom"),
       //PSTR(" fsinfo"), PSTR(" fsformat"), PSTR(" log"),
       nullptr
@@ -1306,6 +1307,10 @@ void Cli::execute(CliCmd& cmd, Stream& s)
     s.print(millis() * 0.001, 1);
     s.println();
   }
+  else if(strcmp_P(cmd.args[0], PSTR("baro")) == 0)  
+  {  
+    printBaroStatus(s);  
+  }
   else if(strcmp_P(cmd.args[0], PSTR("stats")) == 0)
   {
     printVersion(s);
@@ -1675,6 +1680,55 @@ void Cli::printStats(Stream& s) const
   s.print(F("    mag rate: "));
   s.print(_model.state.mag.timer.rate);
   s.println(F(" Hz"));
+}
+
+void Cli::printBaroStatus(Stream& s) const  
+{  
+  s.println(F("BARO STATUS:"));  
+  
+  s.print(F("  Present: "));  
+  s.println(_model.state.baro.present ? F("Yes") : F("No"));  
+  
+  if(_model.state.baro.present)  
+  {  
+    s.print(F("  Device: "));  
+    s.println(FPSTR(Device::BaroDevice::getName(_model.state.baro.dev->getType())));  
+  
+    s.print(F("  Rate: "));  
+    s.print(_model.state.baro.rate);  
+    s.println(F(" Hz"));  
+  
+    s.print(F("  Temperature: "));  
+    s.print(_model.state.baro.temperature, 2);  
+    s.println(F(" C"));  
+  
+    s.print(F("  Pressure: "));  
+    s.print(_model.state.baro.pressure, 2);  
+    s.println(F(" Pa"));  
+  
+    s.print(F("  Altitude Raw: "));  
+    s.print(_model.state.baro.altitudeRaw, 2);  
+    s.println(F(" m"));  
+  
+    s.print(F("  Altitude: "));  
+    s.print(_model.state.baro.altitude, 2);  
+    s.println(F(" m"));  
+  
+    s.print(F("  Altitude Ground: "));  
+    s.print(_model.state.baro.altitudeGround, 2);  
+    s.println(F(" m"));  
+  
+    s.print(F("  Altitude Bias: "));  
+    s.print(_model.state.baro.altitudeBias, 2);  
+    s.println(F(" m"));  
+  
+    s.print(F("  Vario: "));  
+    s.print(_model.state.baro.vario, 2);  
+    s.println(F(" m/s"));  
+  
+    s.print(F("  Bias Samples: "));  
+    s.println(_model.state.baro.altitudeBiasSamples);  
+  }  
 }
 
 }
